@@ -3,6 +3,7 @@
 ## 🎯 One-Minute Overview
 
 Your project now supports:
+
 - **LL(1)**: Top-down predictive parsing with automatic left recursion elimination
 - **SLR(1)**: Simple bottom-up parsing
 - **CLR(1)**: Canonical LR parsing (most powerful)
@@ -15,6 +16,7 @@ All with automatic conflict detection, comparison, and intelligent recommendatio
 ## 📦 What's Included
 
 ### 6 New Production Modules
+
 ```
 transformations.py      - Grammar transformation (left recursion, left factoring)
 ll1_parser.py          - LL(1) predictive parser
@@ -25,6 +27,7 @@ parser_comparator.py   - Grammar comparison & recommendation
 ```
 
 ### All Preserved
+
 ```
 grammar.py             - Grammar representation ✓ Unchanged
 first_follow.py        - FIRST/FOLLOW computation ✓ Unchanged
@@ -73,6 +76,7 @@ print(f"Accepted: {parse_result.accepted}")
 ## 🔨 Core Classes & Methods
 
 ### ParserComparator (Main Entry Point)
+
 ```python
 from parser.parser_comparator import ParserComparator
 
@@ -87,6 +91,7 @@ lalr_parser = comparator.get_parser("LALR(1)")
 ```
 
 ### Individual Parsers
+
 ```python
 from parser.lr_parser import SLRParser, CLRParser, LALRParser, create_parser
 from parser.ll1_parser import LL1Parser
@@ -107,6 +112,7 @@ ll1 = LL1Parser(result.transformed_grammar)
 ```
 
 ### Parser Common Interface
+
 ```python
 # All parsers have same interface
 parser.get_parser_type()      # "SLR(1)", "LL(1)", etc.
@@ -117,6 +123,7 @@ parser.conflicts              # List of conflicts
 ```
 
 ### Conflict Detection
+
 ```python
 from parser.conflict_detector import ConflictDetector
 
@@ -131,6 +138,7 @@ summary = ConflictDetector.generate_conflict_summary([ll1_report, lr_report])
 ```
 
 ### Report Generation
+
 ```python
 from parser.report_generator import ReportGenerator
 
@@ -147,6 +155,7 @@ comparison = ReportGenerator.comparison_report(
 ```
 
 ### Grammar Transformations
+
 ```python
 from parser.transformations import GrammarTransformer
 
@@ -166,6 +175,7 @@ result.new_nonterminals          # Set of new symbols created
 ## 🎯 Common Scenarios
 
 ### Scenario 1: Auto-select Best Parser
+
 ```python
 comparator = ParserComparator(grammar)
 results = comparator.compare_all()
@@ -174,6 +184,7 @@ parse_result = best_parser.parse(input_string)
 ```
 
 ### Scenario 2: Try LL(1)
+
 ```python
 transformer = GrammarTransformer(grammar)
 result = transformer.transform_for_ll1()
@@ -186,6 +197,7 @@ else:
 ```
 
 ### Scenario 3: Compare Specific Parsers
+
 ```python
 slr = SLRParser(grammar)
 clr = CLRParser(grammar)
@@ -198,6 +210,7 @@ print(f"SLR conflicts: {len(slr.conflicts)}")
 ```
 
 ### Scenario 4: Detailed Conflict Report
+
 ```python
 slr = SLRParser(grammar)
 report = ConflictDetector.analyze_lr_conflicts(slr)
@@ -213,6 +226,7 @@ for conflict in report.conflicts:
 ## 📊 Results Structure
 
 ### Comparator Results
+
 ```python
 results = {
     "transformations": {                    # If LL(1) chosen
@@ -240,6 +254,7 @@ results = {
 ```
 
 ### Parser Summary
+
 ```python
 parser.get_summary()
 # Returns:
@@ -263,6 +278,7 @@ parser.get_summary()
 ## 🎓 Parsing Algorithms at a Glance
 
 ### LL(1) - Top-Down Predictive
+
 - **Strategy**: Start from root, expand using parsing table
 - **Table Entry**: Production to use for (nonterminal, terminal)
 - **Conflicts**: Multiple productions for same (NT, T)
@@ -270,6 +286,7 @@ parser.get_summary()
 - **Transformations**: Eliminate left recursion and left factor
 
 ### SLR - Simple LR
+
 - **Strategy**: Shift-reduce with FOLLOW sets
 - **Table**: LR(0) items + FOLLOW sets for reduce decisions
 - **States**: Fewest among LR parsers
@@ -277,6 +294,7 @@ parser.get_summary()
 - **Use**: When simple parsing needed
 
 ### CLR - Canonical LR
+
 - **Strategy**: Shift-reduce with per-state lookahead
 - **Table**: Full LR(1) items with individual lookaheads
 - **States**: Most among LR parsers
@@ -284,6 +302,7 @@ parser.get_summary()
 - **Use**: When maximum parsing power needed
 
 ### LALR - Look-Ahead LR
+
 - **Strategy**: Merge CLR states with same core
 - **Table**: Between SLR and CLR in power
 - **States**: Between SLR and CLR
@@ -295,14 +314,17 @@ parser.get_summary()
 ## ⚠️ Common Issues & Solutions
 
 ### "Grammar is not LL(1)"
+
 **Cause**: Multiple productions for same (nonterminal, terminal)
 **Solution**: Use LR parser (SLR, CLR, or LALR) instead
 
 ### "SLR has conflicts but CLR doesn't"
+
 **Cause**: SLR uses only FOLLOW sets; CLR has more precise lookahead
 **Solution**: Use CLR or LALR
 
 ### "Left recursion detected in LL(1)"
+
 **Expected**: Transformations automatically handle it
 **Check**: `transformation_result.left_recursion_removed`
 
@@ -322,6 +344,7 @@ parser.get_summary()
 All new modules are **UI-agnostic** - they return structured data only.
 
 For app.py:
+
 1. Use `ParserComparator` for comparison
 2. Get results as dictionaries
 3. Display using any UI framework
@@ -329,6 +352,7 @@ For app.py:
 5. Show parse results using same interface
 
 Example UI integration:
+
 ```python
 # In app.py
 from parser.parser_comparator import ParserComparator

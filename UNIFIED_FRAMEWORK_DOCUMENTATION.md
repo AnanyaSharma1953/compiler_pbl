@@ -33,10 +33,12 @@ parser/
 **Purpose:** Transform grammars for top-down parsing by eliminating left recursion and left factoring.
 
 **Key Classes:**
+
 - `GrammarTransformer` - Main transformation engine
 - `TransformationResult` - Result dataclass
 
 **Key Methods:**
+
 ```python
 transformer = GrammarTransformer(grammar)
 result = transformer.transform_for_ll1()
@@ -50,12 +52,11 @@ result = transformer.transform_for_ll1()
 ```
 
 **Algorithms Implemented:**
+
 1. **Direct Left Recursion Elimination**
    - Transform: `A → A α | β` → `A → β A' | A' → α A' | ε`
-   
 2. **Indirect Left Recursion Elimination**
    - Aho/Ullman algorithm for indirect recursion
-   
 3. **Left Factoring**
    - Transform: `A → α β₁ | α β₂` → `A → α A' | A' → β₁ | β₂`
 
@@ -66,11 +67,13 @@ result = transformer.transform_for_ll1()
 **Purpose:** Implement top-down predictive parsing with conflict detection.
 
 **Key Classes:**
+
 - `LL1Parser` - Main LL(1) parser
 - `LL1Conflict` - Conflict representation
 - `LL1ParseStep` - Parsing trace step
 
 **Key Methods:**
+
 ```python
 ll1_parser = LL1Parser(transformed_grammar)
 
@@ -78,12 +81,13 @@ ll1_parser = LL1Parser(transformed_grammar)
 if ll1_parser.is_ll1:
     # Parse input
     steps, accepted = ll1_parser.parse("id + id")
-    
+
     # Get summary
     summary = ll1_parser.get_table_summary()
 ```
 
 **Parsing Table Construction:**
+
 - Uses FIRST+ sets: `FIRST+(A → α) = FIRST(α) ∪ (FOLLOW(A) if ε ∈ FIRST(α))`
 - Detects multiple productions for same (nonterminal, terminal) pair
 - Returns clear conflict information
@@ -95,12 +99,14 @@ if ll1_parser.is_ll1:
 **Purpose:** Class-based architecture for SLR, CLR, and LALR parsers.
 
 **Key Classes:**
+
 - `LRParser` - Abstract base class
 - `SLRParser` - Simple LR(1)
 - `CLRParser` - Canonical LR(1)
 - `LALRParser` - Look-Ahead LR(1)
 
 **Factory Function:**
+
 ```python
 from parser.lr_parser import create_parser
 
@@ -110,14 +116,15 @@ result = parser.parse("id + id")
 ```
 
 **Parser Comparison:**
+
 ```
 SLR:    Uses LR(0) items + FOLLOW sets for reduces
         Smallest state count, most conflicts
-        
+
 LALR:   Merges LR(1) cores with same LR(0) items
         Medium state count, balanced conflicts
         Standard choice (YACC, Bison)
-        
+
 CLR:    Full LR(1) with individual lookahead
         Most states, fewest conflicts
         Most powerful but expensive
@@ -130,10 +137,12 @@ CLR:    Full LR(1) with individual lookahead
 **Purpose:** Detect and report conflicts for both LL(1) and LR parsers.
 
 **Key Classes:**
+
 - `ConflictDetector` - Static methods for conflict analysis
 - `ConflictReport` - Structured conflict report
 
 **Key Methods:**
+
 ```python
 from parser.conflict_detector import ConflictDetector
 
@@ -148,6 +157,7 @@ summary = ConflictDetector.generate_conflict_summary([ll1_report, lr_report])
 ```
 
 **Conflict Types Detected:**
+
 - **LL(1)**: Multiple productions for same (nonterminal, terminal)
 - **Shift-Reduce**: Parser can shift or reduce
 - **Reduce-Reduce**: Parser can use multiple reductions
@@ -160,9 +170,11 @@ summary = ConflictDetector.generate_conflict_summary([ll1_report, lr_report])
 **Purpose:** Generate formatted, structured reports for all parser types.
 
 **Key Class:**
+
 - `ReportGenerator` - Static report generation methods
 
 **Key Methods:**
+
 ```python
 from parser.report_generator import ReportGenerator
 
@@ -179,6 +191,7 @@ comparison = ReportGenerator.comparison_report(
 ```
 
 **Report Structure:**
+
 - Grammar statistics
 - FIRST/FOLLOW sets
 - Parsing table information
@@ -192,9 +205,11 @@ comparison = ReportGenerator.comparison_report(
 **Purpose:** Evaluate grammar across all parser types and provide recommendations.
 
 **Key Class:**
+
 - `ParserComparator` - Main comparison engine
 
 **Key Methods:**
+
 ```python
 from parser.parser_comparator import ParserComparator
 
@@ -316,7 +331,7 @@ ParserComparator.compare_all()
     │
     └─→ LALRParser(original_grammar)
         └─→ ConflictDetector.analyze_lr_conflicts()
-    
+
 ReportGenerator generates structured output
 ```
 
@@ -348,6 +363,7 @@ The framework is designed to be UI-agnostic. The new `app.py` should:
 ## Testing
 
 All new modules are tested and working:
+
 - ✅ Grammar transformation (left recursion, left factoring)
 - ✅ LL(1) parser construction
 - ✅ LR parser classes (SLR, CLR, LALR)
@@ -356,6 +372,7 @@ All new modules are tested and working:
 - ✅ Grammar comparison
 
 Example test:
+
 ```python
 grammar = Grammar.from_text("""
 E -> E + T | T
@@ -384,4 +401,3 @@ assert "comparison" in results
    - Recommendation display
 3. **Visualization updates** for LL(1) parsing table
 4. **Step-by-step** trace for both LL(1) and LR parsing
-
