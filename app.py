@@ -561,14 +561,32 @@ if "table" not in st.session_state:
 # =========================================================
 
 def make_set_table(data, grammar, name):
+    """
+    Create a table displaying FIRST or FOLLOW sets for non-terminals only.
+    
+    Args:
+        data: Dictionary mapping symbols to their sets
+        grammar: Grammar object
+        name: "FIRST" or "FOLLOW" - used as column header
+    
+    Returns:
+        DataFrame with non-terminals and their sets
+    """
     rows = []
-    nts = set(grammar.get_nonterminals())
-
-    for nt, vals in sorted(data.items()):
-        if nt in nts:
-            rows.append([nt, ", ".join(sorted(vals))])
-
-    return pd.DataFrame(rows, columns=["NonTerminal", name])
+    nonterminals = grammar.get_nonterminals()
+    
+    # Sort non-terminals alphabetically for consistent display
+    sorted_nonterminals = sorted(nonterminals)
+    
+    # Only display non-terminals (filter out terminals)
+    for nt in sorted_nonterminals:
+        if nt in data:
+            # Format set as { a, b, c }
+            vals = sorted(data[nt])
+            formatted_set = "{ " + ", ".join(vals) + " }"
+            rows.append([nt, formatted_set])
+    
+    return pd.DataFrame(rows, columns=["Non-Terminal", name])
 
 
 def make_lr_table(table, grammar):
