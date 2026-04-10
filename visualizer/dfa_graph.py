@@ -1,4 +1,4 @@
-,"""
+"""
 DFA visualization using Graphviz.
 
 Renders the LR state machine as a directed graph.
