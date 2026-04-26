@@ -10,7 +10,7 @@ Implements top-down predictive parsing:
 
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple, Optional
-from parser.grammar import Grammar, Production
+from parser.grammar import EPSILON, Grammar, Production
 from parser.first_follow import compute_first_sets, compute_follow_sets
 
 
@@ -42,6 +42,15 @@ class LL1TableEntry:
     production_index: int
 
 
+@dataclass
+class LL1ParseError:
+    """Structured LL(1) parse error information."""
+    message: str
+    position: int
+    expected: Optional[str] = None
+    found: Optional[str] = None
+
+
 class LL1Parser:
     """
     LL(1) Predictive Parser Implementation.
@@ -61,6 +70,7 @@ class LL1Parser:
         self.follow_sets = compute_follow_sets(grammar)
         self.parsing_table: Dict[str, Dict[str, LL1TableEntry]] = {}
         self.conflicts: List[LL1Conflict] = []
+        self.last_error: Optional[LL1ParseError] = None
         self.is_ll1 = False
         
         self._build_parsing_table()
@@ -78,7 +88,7 @@ class LL1Parser:
         first_plus = set()
         rhs = production.rhs
         
-        if rhs == ["ε"]:
+        if len(rhs) == 0:
             # ε production: use FOLLOW(A)
             first_plus = self.follow_sets.get(production.lhs, set()).copy()
         else:
@@ -87,13 +97,13 @@ class LL1Parser:
             first_plus = first_rhs.copy()
             
             # If ε ∈ FIRST(α), add FOLLOW(A)
-            if "ε" in first_rhs:
-                first_plus.discard("ε")
+            if EPSILON in first_rhs:
+                first_plus.discard(EPSILON)
                 first_plus.update(self.follow_sets.get(production.lhs, set()))
         
         return first_plus
     
-    def _compute_first_of_sequence(self, sequence: List[str]) -> Set[str]:
+    def _compute_first_of_sequence(self, sequence: Tuple[str, ...]) -> Set[str]:
         """
         Compute FIRST of a sequence of symbols.
         
@@ -107,19 +117,19 @@ class LL1Parser:
         all_nullable = True
         
         for symbol in sequence:
-            if symbol == "ε":
-                result.add("ε")
+            if symbol == EPSILON:
+                result.add(EPSILON)
                 continue
             
             symbol_first = self.first_sets.get(symbol, {symbol})
-            result.update(symbol_first - {"ε"})
+            result.update(symbol_first - {EPSILON})
             
-            if "ε" not in symbol_first:
+            if EPSILON not in symbol_first:
                 all_nullable = False
                 break
         
         if all_nullable:
-            result.add("ε")
+            result.add(EPSILON)
         
         return result
     
@@ -151,7 +161,7 @@ class LL1Parser:
             
             # Add entry for each terminal in FIRST+
             for terminal in first_plus:
-                if terminal == "ε":
+                if terminal == EPSILON:
                     continue
                 
                 if terminal in self.parsing_table[nonterminal]:
@@ -187,8 +197,10 @@ class LL1Parser:
         
         Returns: (parse_steps, accepted)
         """
+        self.last_error = None
+
         if not self.is_ll1:
-            # Cannot parse if grammar is not LL(1)
+            self.last_error = LL1ParseError(message="Grammar is not LL(1)", position=0)
             return [], False
         
         tokens = input_string.split()
@@ -219,11 +231,17 @@ class LL1Parser:
                     ))
                     return steps, True
                 else:
+                    self.last_error = LL1ParseError(
+                        message=f"Unexpected token at position {input_idx}",
+                        position=input_idx,
+                        expected="$",
+                        found=current_input,
+                    )
                     steps.append(LL1ParseStep(
                         step_number=step_num,
                         stack=stack.copy(),
                         input_remaining=input_remaining,
-                        action=f"Error: Unexpected input '{current_input}'"
+                        action=f"Error: Unexpected token at position {input_idx} ('{current_input}')"
                     ))
                     return steps, False
             
@@ -240,11 +258,17 @@ class LL1Parser:
                     stack.pop()
                     input_idx += 1
                 else:
+                    self.last_error = LL1ParseError(
+                        message=f"Unexpected token at position {input_idx}",
+                        position=input_idx,
+                        expected=top,
+                        found=current_input,
+                    )
                     steps.append(LL1ParseStep(
                         step_number=step_num,
                         stack=stack.copy(),
                         input_remaining=input_remaining,
-                        action=f"Error: Expected '{top}', got '{current_input}'"
+                        action=f"Error: Unexpected token at position {input_idx} (expected '{top}', got '{current_input}')"
                     ))
                     return steps, False
             
@@ -257,7 +281,7 @@ class LL1Parser:
                     # Pop non-terminal and push RHS in reverse order
                     stack.pop()
                     rhs = prod.rhs
-                    if rhs != ["ε"]:
+                    if len(rhs) > 0:
                         for symbol in reversed(rhs):
                             stack.append(symbol)
                     
@@ -269,11 +293,17 @@ class LL1Parser:
                         production_used=prod
                     ))
                 else:
+                    self.last_error = LL1ParseError(
+                        message=f"No matching production found at position {input_idx}",
+                        position=input_idx,
+                        expected=top,
+                        found=current_input,
+                    )
                     steps.append(LL1ParseStep(
                         step_number=step_num,
                         stack=stack.copy(),
                         input_remaining=input_remaining,
-                        action=f"Error: No table entry for ({top}, {current_input})"
+                        action=f"Error: No matching production found for {top} with lookahead '{current_input}' at position {input_idx}"
                     ))
                     return steps, False
             

@@ -6,6 +6,9 @@ from parser.grammar import Grammar
 from parser.first_follow import compute_first_sets, compute_follow_sets
 from parser.parsing_table import build_slr_table, build_clr_table, build_lalr_table
 from parser.shift_reduce import parse_input
+from parser.ll1_parser import LL1Parser
+from parser.recursive_descent import RecursiveDescentParser
+from parser.top_down_validator import TopDownGrammarValidator
 from visualizer.dfa_graph import build_dfa_graph
 
 
@@ -473,6 +476,80 @@ class LL1Step:
         self.action = action
 
 
+def adapt_ll1_steps(steps):
+    adapted = []
+    for step in steps:
+        stack_repr = " ".join(step.stack) if isinstance(step.stack, list) else str(step.stack)
+        adapted.append(LL1Step(stack_repr, step.input_remaining, step.action))
+    return adapted
+
+
+def show_top_down_validation_report(report, selected_top_down_type):
+    cfg_syntax_valid = True
+    ll1_compatible = report.is_valid_for_ll1()
+    rd_compatible = report.is_valid_for_recursive_descent()
+
+    if selected_top_down_type == "LL(1)":
+        if ll1_compatible:
+            st.success("✅ Valid CFG and LL(1) compatible")
+        else:
+            st.error("❌ Invalid for LL(1) parsing")
+            st.caption("CFG syntax is valid, but parser compatibility failed.")
+            st.error("Cannot construct LL(1) parser")
+    else:
+        if rd_compatible:
+            if report.is_ll1:
+                st.success("✅ Valid CFG and compatible with Recursive Descent (Predictive)")
+            else:
+                st.success("✅ Valid CFG and compatible with Recursive Descent")
+                st.warning("⚠️ Grammar is not LL(1). Backtracking will be used.")
+        else:
+            st.error("❌ Invalid for Recursive Descent parsing")
+            st.caption("CFG syntax is valid, but parser compatibility failed.")
+
+    ll1_type = "LL(1) Compatible" if report.is_ll1 else "Not LL(1)"
+
+    st.markdown("#### 🧾 Top-Down Validation Summary")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Issues", len(report.issues))
+    with col2:
+        st.metric("CFG Syntax", "Valid" if cfg_syntax_valid else "Invalid")
+    with col3:
+        st.metric("LL(1)", ll1_type)
+    with col4:
+        if selected_top_down_type == "LL(1)":
+            st.metric("Compatibility", "Compatible" if ll1_compatible else "Incompatible")
+        else:
+            st.metric("Compatibility", "Compatible" if rd_compatible else "Incompatible")
+
+    if report.needs_left_factoring:
+        st.warning("⚠️ Left factoring required. Grammar can be converted to LL(1) using left factoring.")
+
+    if report.has_first_first_conflict:
+        st.warning("⚠️ FIRST/FIRST conflict detected (common prefixes in alternatives).")
+
+    if report.has_first_follow_conflict:
+        st.warning("⚠️ FIRST/FOLLOW conflict detected.")
+
+    if report.issues:
+        with st.expander("🔍 Top-Down Validation Log"):
+            for issue in report.issues:
+                st.code(
+                    f"[{issue.code}] {issue.message}\n{issue.details}",
+                    language="text"
+                )
+            if report.ll1_conflicts:
+                st.markdown("**LL(1) Conflict Productions**")
+                for conflict in report.ll1_conflicts:
+                    st.code(
+                        f"Non-terminal: {conflict['nonterminal']}\n"
+                        f"Lookahead: {conflict['terminal']}\n"
+                        f"Conflict: {conflict['production1']}  ↔  {conflict['production2']}",
+                        language="text"
+                    )
+
+
 def parse_ll1(grammar, parsing_table, input_string):
 
     stack = ["$", grammar.start_symbol]
@@ -650,6 +727,23 @@ with st.sidebar:
             "CLR(1)": "💪 Powerful | More states | Full LR power"
         }
         st.info(parser_info[parser_type])
+    else:
+        st.markdown("#### 🔧 Top-Down Parser Type")
+        top_down_type = st.selectbox(
+            "Choose Top-Down Type",
+            ["LL(1)", "Recursive Descent"],
+            on_change=reset,
+            help="""
+            **LL(1)**: Predictive parsing using a parsing table
+            **Recursive Descent**: Predictive (LL(1)) or Backtracking (non-LL(1))
+            """
+        )
+
+        top_down_info = {
+            "LL(1)": "📘 Predictive | Table-driven | Requires LL(1) grammar",
+            "Recursive Descent": "🔁 Predictive for LL(1), Backtracking otherwise"
+        }
+        st.info(top_down_info[top_down_type])
     
     st.markdown("---")
     
@@ -798,14 +892,113 @@ if build_btn and grammar_text.strip():
             st.error(f"### ❌ Grammar Conflict Detected")
             st.warning(f"**The given grammar is NOT {parser_type} parseable.**")
             
+            augmented = grammar.augment()
+
+            def _format_item_text(item):
+                if item.prod_index < len(augmented.productions):
+                    prod = augmented.productions[item.prod_index]
+                    lhs = prod.lhs
+                    rhs = list(prod.rhs)
+                else:
+                    lhs = grammar.start_symbol + "'"
+                    rhs = [grammar.start_symbol]
+
+                dot_pos = min(item.dot, len(rhs))
+                rhs_with_dot = rhs[:dot_pos] + ["•"] + rhs[dot_pos:]
+                base = f"{lhs} → {' '.join(rhs_with_dot)}"
+                if hasattr(item, "lookahead"):
+                    return f"{base} , {item.lookahead}"
+                return base
+
+            def _format_action_text(action_entry):
+                action_type, action_value = action_entry
+                if action_type == "shift":
+                    return f"Shift to state I{action_value}"
+                if action_type == "reduce":
+                    if action_value is not None and action_value < len(augmented.productions):
+                        reduce_prod = augmented.productions[action_value]
+                        return f"Reduce using: {reduce_prod}"
+                    return f"Reduce using production #{action_value}"
+                if action_type == "accept":
+                    return "Accept"
+                return str(action_entry)
+
             # Show conflicts in expandable section
             with st.expander("🔍 View Conflict Details"):
-                for c in table.conflicts:
-                    st.code(
-                        f"State I{c.state}, Symbol '{c.symbol}':\n"
-                        f"  Conflict: {c.existing_action} ↔ {c.new_action}",
-                        language="text"
-                    )
+                for idx, c in enumerate(table.conflicts, start=1):
+                    with st.expander(f"Conflict {idx}: State I{c.state}, Symbol '{c.symbol}'", expanded=(idx == 1)):
+                        st.markdown("**Detailed Conflict Explanation**")
+
+                        conflict_state = table.states[c.state]
+                        all_items = [_format_item_text(item) for item in conflict_state]
+                        st.markdown(f"**State I{c.state} Items**")
+                        st.code("\n".join(all_items), language="text")
+
+                        shift_items = [
+                            _format_item_text(item)
+                            for item in conflict_state
+                            if item.dot < len(augmented.productions[item.prod_index].rhs)
+                            and augmented.productions[item.prod_index].rhs[item.dot] == c.symbol
+                        ]
+
+                        reduce_items = []
+                        for item in conflict_state:
+                            prod = augmented.productions[item.prod_index]
+                            if item.dot >= len(prod.rhs):
+                                if hasattr(item, "lookahead"):
+                                    if item.lookahead == c.symbol:
+                                        reduce_items.append(_format_item_text(item))
+                                else:
+                                    reduce_items.append(_format_item_text(item))
+
+                        st.markdown("**Why SHIFT is possible**")
+                        if shift_items:
+                            st.info("SHIFT (reason): There is an item with the dot before this terminal, so parser can consume it.")
+                            st.code("\n".join(shift_items), language="text")
+                        else:
+                            st.info("No direct shift item was found for this symbol in the state snapshot.")
+
+                        st.markdown("**Why REDUCE is possible**")
+                        if reduce_items:
+                            st.info("REDUCE (reason): There is a completed item (dot at the end), so parser can reduce.")
+                            st.code("\n".join(reduce_items), language="text")
+                        else:
+                            st.info("No completed reduce item was found for this symbol in the state snapshot.")
+
+                        st.markdown("**Conflicting actions**")
+                        st.write(f"- Existing action: {_format_action_text(c.existing_action)}")
+                        st.write(f"- New action: {_format_action_text(c.new_action)}")
+
+                        terminals = sorted([t for t in grammar.get_terminals() if t != '$']) + ["$"]
+                        nonterminals = sorted(grammar.get_nonterminals())
+                        row = {"State": f"I{c.state}"}
+
+                        for t in terminals:
+                            val = ""
+                            if c.state in table.action and t in table.action[c.state]:
+                                a, v = table.action[c.state][t]
+                                if a == "shift":
+                                    val = f"s{v}"
+                                elif a == "reduce":
+                                    val = f"r{v}"
+                                elif a == "accept":
+                                    val = "acc"
+                            row[t] = str(val)
+
+                        for nt in nonterminals:
+                            goto_val = ""
+                            if c.state in table.goto and nt in table.goto[c.state]:
+                                goto_val = table.goto[c.state][nt]
+                            row[nt] = str(goto_val)
+
+                        st.markdown("**Parsing Table Row (Conflict State)**")
+                        st.dataframe(pd.DataFrame([row]), width='stretch')
+
+                        existing_text = _format_action_text(c.existing_action)
+                        new_text = _format_action_text(c.new_action)
+                        st.error(
+                            f"Conflicting cell ACTION[I{c.state}, '{c.symbol}'] = {existing_text} / {new_text}"
+                        )
             
             st.info("💡 **Tip:** Try modifying the grammar or using a different parser type (CLR is most powerful).")
             st.stop()
@@ -834,28 +1027,83 @@ if build_btn and grammar_text.strip():
     # -----------------------------------------------------
     else:
         
-        status_text.text("Building LL(1) parsing table...")
+        status_text.text(f"Building {top_down_type} parser...")
         progress_bar.progress(60)
-        
-        ll1_table, conflict = build_ll1_table(grammar, first, follow)
-        
-        progress_bar.progress(80)
-        
-        if conflict:
+
+        parser_used = top_down_type
+        parser_mode = None
+        effective_parser = None
+        rd_parser = None
+        validator = TopDownGrammarValidator(grammar)
+        validation_report = validator.validate()
+
+        show_top_down_validation_report(validation_report, top_down_type)
+
+        if top_down_type == "LL(1)" and not validation_report.is_valid_for_ll1():
             progress_bar.empty()
             status_text.empty()
-            
-            st.error("### ❌ Grammar Conflict Detected")
-            st.warning("**The given grammar is NOT LL(1) parseable.**")
-            st.info("💡 **Tip:** LL(1) grammars cannot have left recursion or common prefixes. Try left-factoring or eliminating left recursion.")
+
+            st.error("### ❌ Grammar is not LL(1)")
+            st.error("**Cannot construct LL(1) parser**")
+
+            if validation_report.has_first_first_conflict:
+                st.error("• FIRST/FIRST conflict")
+            if validation_report.has_first_follow_conflict:
+                st.error("• FIRST/FOLLOW conflict")
+            if validation_report.needs_left_factoring:
+                st.error("• Left factoring required")
+                st.info("Grammar can be converted to LL(1) using left factoring")
+
+            st.info("LL(1) parsing requires a conflict-free grammar")
             st.stop()
+
+        if top_down_type == "LL(1)":
+            effective_parser = "LL(1)"
+            parser_mode = "predictive"
+            ll1_parser = LL1Parser(grammar)
+            st.success("🏷️ Status: LL(1) Compatible")
+
+        else:
+            if validation_report.has_left_recursion:
+                progress_bar.empty()
+                status_text.empty()
+                st.error("### ❌ Left recursion detected")
+                st.warning("**Top-down parsing cannot proceed due to left recursion.**")
+                st.stop()
+
+            effective_parser = "Recursive Descent"
+            if validation_report.is_ll1:
+                parser_mode = "predictive"
+                st.success("🏷️ Status: LL(1) Compatible")
+                st.info("ℹ️ Using Predictive Recursive Descent")
+            else:
+                parser_mode = "backtracking"
+                parser_used = "Recursive Descent (Backtracking)"
+                st.warning("Grammar is not LL(1). Using Recursive Descent with Backtracking.")
+                st.warning("Parser built with backtracking (may be less efficient)")
+                st.info("🏷️ Status: Not LL(1) | Using Backtracking")
+
+        progress_bar.progress(80)
+
+        if effective_parser == "Recursive Descent":
+            rd_parser = RecursiveDescentParser(grammar, mode=parser_mode)
+            parser_used = f"Recursive Descent ({parser_mode.title()})"
+            st.info("ℹ️ Recursive Descent mode: Backtracking")
         
         status_text.text("Parsing input string...")
         progress_bar.progress(90)
         
         if input_string.strip():
-            steps, accepted = parse_ll1(grammar, ll1_table, input_string)
-            st.session_state.steps = steps
+            if effective_parser == "LL(1)":
+                ll1_steps, accepted = ll1_parser.parse(input_string)
+                st.session_state.steps = adapt_ll1_steps(ll1_steps)
+                if not accepted and ll1_parser.last_error:
+                    st.error(f"❌ {ll1_parser.last_error.message}")
+            else:
+                rd_steps, accepted, _ = rd_parser.parse(input_string)
+                st.session_state.steps = rd_steps
+                if not accepted and rd_parser.last_error:
+                    st.error(f"❌ {rd_parser.last_error.message}")
             st.session_state.accepted = accepted
         
         st.session_state.table = None
@@ -866,8 +1114,12 @@ if build_btn and grammar_text.strip():
         progress_bar.empty()
         status_text.empty()
         
-        # Success message
-        st.success("✨ **LL(1) Parser Built Successfully!**")
+        if effective_parser == "LL(1)":
+            st.success("✨ **LL(1) Parser Built Successfully**")
+        elif parser_mode == "predictive":
+            st.success("✨ **Recursive Descent Parser Built (Predictive Mode)**")
+        else:
+            st.success("✨ **Recursive Descent Parser Built (Backtracking Mode)**")
 
 elif build_btn:
     st.warning("⚠️ Please enter a grammar first!")
@@ -1151,18 +1403,32 @@ if st.session_state.grammar:
             
             # Explanation
             with st.expander("ℹ️ Understanding the Trace"):
-                st.markdown("""
-                **Stack**: Shows the parser's stack contents at each step
-                
-                **Input**: Remaining input to be parsed
-                
-                **Action**: What the parser does:
-                - `Shift`: Push input symbol onto stack
-                - `Reduce N`: Apply production rule N
-                - `Match`: Symbol matches (for LL1)
-                - `Accept`: Parsing complete successfully
-                - `Error`: Parsing failed
-                """)
+                if mode == "Bottom Up (LR)":
+                    st.markdown("""
+                    **Stack**: Shows the parser's stack contents at each step
+
+                    **Input**: Remaining input to be parsed
+
+                    **Action**: What the parser does:
+                    - `Shift`: Push input symbol onto stack
+                    - `Reduce N`: Apply production rule N
+                    - `Accept`: Parsing complete successfully
+                    - `Error`: Parsing failed
+                    """)
+                else:
+                    st.markdown("""
+                    **Stack**: Shows the parser's call/parse stack at each step
+
+                    **Input**: Remaining input to be parsed
+
+                    **Action**: What the parser does:
+                    - `Try`: Attempt a production
+                    - `Match terminal`: Consume a terminal symbol
+                    - `Apply`: Successfully expand a non-terminal
+                    - `Backtrack`: Try an alternative production
+                    - `Accept`: Parsing complete successfully
+                    - `Mismatch` / `Error`: Parsing failed
+                    """)
         else:
             st.info("💡 **Enter an input string and click 'Build & Parse' to see the trace**")
             st.markdown("""

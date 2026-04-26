@@ -11,7 +11,7 @@ All transformations preserve language recognition while making grammar suitable 
 
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
-from parser.grammar import Grammar, Production
+from parser.grammar import EPSILON, Grammar, Production
 
 
 @dataclass
@@ -82,8 +82,7 @@ class GrammarTransformer:
             return productions
         
         if len(non_recursive) == 0:
-            # All productions are left-recursive, add epsilon
-            non_recursive = [Production(nonterminal, ["ε"])]
+            non_recursive = [Production(nonterminal, tuple())]
         
         # Create new non-terminal A'
         new_nt = self._generate_new_nonterminal(nonterminal)
@@ -91,17 +90,17 @@ class GrammarTransformer:
         # Transform A → β₁ | β₂ | ... → A → β₁ A' | β₂ A' | ...
         new_productions = []
         for prod in non_recursive:
-            rhs = list(prod.rhs) if prod.rhs != ["ε"] else []
-            new_productions.append(Production(nonterminal, rhs + [new_nt]))
+            rhs = list(prod.rhs)
+            new_productions.append(Production(nonterminal, tuple(rhs + [new_nt])))
         
         # Transform A → A α₁ | A α₂ | ... → A' → α₁ A' | α₂ A' | ...
         for prod in recursive:
             # Remove the leading A from A α
             alpha = list(prod.rhs[1:])  # α is everything after A
-            new_productions.append(Production(new_nt, alpha + [new_nt]))
+            new_productions.append(Production(new_nt, tuple(alpha + [new_nt])))
         
-        # Add A' → ε
-        new_productions.append(Production(new_nt, ["ε"]))
+        # Add A' → ε as empty RHS
+        new_productions.append(Production(new_nt, tuple()))
         
         detail = f"Eliminated direct left recursion in {nonterminal}, created {new_nt}"
         self.transformations.append(detail)
@@ -155,7 +154,7 @@ class GrammarTransformer:
                         gamma = list(prod.rhs[1:])
                         for A_j_prod in productions_dict[A_j]:
                             new_rhs = list(A_j_prod.rhs) + gamma
-                            substituted.append(Production(A_i, new_rhs))
+                            substituted.append(Production(A_i, tuple(new_rhs)))
                     else:
                         remaining.append(prod)
                 
@@ -183,7 +182,7 @@ class GrammarTransformer:
         prefix_groups = {}
         
         for prod in productions:
-            if len(prod.rhs) == 0 or prod.rhs == ["ε"]:
+            if len(prod.rhs) == 0:
                 continue
             
             first_symbol = prod.rhs[0]
@@ -222,14 +221,15 @@ class GrammarTransformer:
             new_nt = self._generate_new_nonterminal(nonterminal)
             
             # A → α A'
-            new_productions.append(Production(nonterminal, [prefix, new_nt]))
+            new_productions.append(Production(nonterminal, (prefix, new_nt)))
             
             # A' → β₁ | β₂ | ... (suffixes after common prefix)
             for prod in prods_with_prefix:
                 suffix = list(prod.rhs[1:])  # Everything after the common prefix
                 if len(suffix) == 0:
-                    suffix = ["ε"]
-                new_productions.append(Production(new_nt, suffix))
+                    new_productions.append(Production(new_nt, tuple()))
+                else:
+                    new_productions.append(Production(new_nt, tuple(suffix)))
                 factored_prods.add(id(prod))
             
             detail = f"Left factored {nonterminal} with prefix '{prefix}', created {new_nt}"
