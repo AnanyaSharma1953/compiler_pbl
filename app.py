@@ -721,7 +721,7 @@ with st.sidebar:
     # Build button with icon
     build_btn = st.button(
         "🚀 Build & Parse",
-        use_container_width=True,
+        width='stretch',
         type="primary"
     )
     
@@ -971,7 +971,7 @@ if st.session_state.grammar:
             df_first = make_set_table(first, grammar, "FIRST")
             st.dataframe(
                 df_first,
-                use_container_width=True,
+                width='stretch',
                 height=min(400, len(df_first) * 35 + 38)
             )
 
@@ -981,7 +981,7 @@ if st.session_state.grammar:
             df_follow = make_set_table(follow, grammar, "FOLLOW")
             st.dataframe(
                 df_follow,
-                use_container_width=True,
+                width='stretch',
                 height=min(400, len(df_follow) * 35 + 38)
             )
 
@@ -1058,7 +1058,7 @@ if st.session_state.grammar:
             
             st.dataframe(
                 df,
-                use_container_width=True,
+                width='stretch',
                 height=min(600, len(df) * 35 + 38)
             )
             
@@ -1090,7 +1090,7 @@ if st.session_state.grammar:
             with st.spinner("Generating DFA graph..."):
                 try:
                     graph = build_dfa_graph(table.states, table.transitions)
-                    st.graphviz_chart(graph, use_container_width=True)
+                    st.graphviz_chart(graph, width='stretch')
                 except Exception as e:
                     st.error(f"Error generating graph: {str(e)}")
                     st.info("💡 Make sure Graphviz is installed on your system")
@@ -1152,7 +1152,7 @@ if st.session_state.grammar:
             # Display with custom styling
             st.dataframe(
                 df_trace,
-                use_container_width=True,
+                width='stretch',
                 height=min(500, len(df_trace) * 35 + 38)
             )
             
