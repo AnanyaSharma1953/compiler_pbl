@@ -1,103 +1,211 @@
-# LR Parser Visualizer and Generator
+# Unified Parsing Framework & Compiler Design Laboratory
 
-### (SLR / CLR / LALR Bottom-Up Parser Simulator)
+### A comprehensive, educational parsing system with interactive visualization, supporting both top-down and bottom-up parsing algorithms.
 
 ---
 
 ## 📌 Project Overview
 
-This project is a **Visual LR Parser Generator** that automatically constructs a **bottom-up parser** from a context-free grammar and demonstrates how **LR parsing works step-by-step**.
+This project is a **comprehensive parsing framework** that teaches and demonstrates how real compilers parse code. It implements a complete suite of parsing algorithms—from simple recursive descent to powerful LALR(1)—all with interactive visualization, conflict detection, and educational insights.
 
-The system takes a grammar as input and:
+**What it does:**
 
-- Computes FIRST and FOLLOW sets
-- Constructs LR item sets (closure and goto)
-- Builds DFA of states
-- Generates ACTION and GOTO parsing tables
-- Performs shift–reduce parsing
-- Visually shows parsing steps and parse tree
+- Parses context-free grammars in a unified framework
+- Supports **6 different parsing strategies** (LL(1), Recursive Descent, SLR(1), CLR(1), LALR(1))
+- Automatically transforms grammars to work with specific parsers
+- Detects and explains conflicts in grammars
+- Visualizes parsing steps and construction with parse trees
+- Compares parser capabilities and recommends the best one for your grammar
 
-It acts as a **mini version of YACC/Bison** with visualization and is designed for educational and compiler design learning purposes.
+**What makes it special:**
 
-**Key Feature:** All algorithms are implemented from scratch without external parsing libraries.
-
----
-
-## 🎯 Objectives
-
-- Understand Bottom-Up Parsing
-- Implement LR algorithms from scratch
-- Visualize parser construction
-- Simulate real compiler behavior
-- Provide interactive learning for students
+- ✅ All algorithms implemented from scratch—no external parsing libraries
+- ✅ Interactive Streamlit UI with beautiful dark-mode visualization
+- ✅ Educational focus: Learn how parsers actually work, step-by-step
+- ✅ Unified framework: Compare multiple parsing strategies on the same grammar
+- ✅ Production-ready code architecture with clear separation of concerns
 
 ---
 
-## ✨ Features
+## 🎯 Learning Objectives
 
-✅ Grammar input from user
-✅ FIRST and FOLLOW computation
-✅ LR(0) item generation
-✅ Closure and GOTO functions
-✅ Canonical collection of LR states
-✅ DFA state diagram visualization
-✅ ACTION & GOTO parsing table generation
-✅ Step-by-step Shift–Reduce parsing
-✅ Parse tree visualization
-✅ Conflict detection (Shift/Reduce, Reduce/Reduce)
-✅ Support for:
+This framework helps you understand:
 
-- SLR(1)
-- CLR(1)
-- LALR(1)
+- **How compilers parse code** at the algorithmic level
+- **Top-down parsing**: Recursive descent and LL(1) predictive parsing
+- **Bottom-up parsing**: Shift-reduce and LR algorithms (SLR, CLR, LALR)
+- **Grammar transformations**: Making grammars parseable by different strategies
+- **Conflict resolution**: Understanding ambiguities in grammars
+- **Automatic table generation**: From grammar to ACTION/GOTO tables
+- **Parser comparison**: How different algorithms trade-off power vs. simplicity
 
 ---
 
-## 🧠 Algorithms Implemented
+## ✨ Core Features
 
-### 1. FIRST & FOLLOW
+### Parsing Algorithms (6 Total)
 
-Computes terminals that can appear first and follow a non-terminal.
+**Top-Down Parsers:**
 
-### 2. Closure
+- ✅ **LL(1) Predictive Parser**: Efficient, predictable parsing
+- ✅ **Recursive Descent Parser**: Manual backtracking-based parsing
 
-Adds all possible productions when a dot is before a non-terminal.
+**Bottom-Up Parsers:**
 
-### 3. GOTO
+- ✅ **SLR(1)** (Simple LR): Fast, limited power
+- ✅ **CLR(1)** (Canonical LR): Most powerful, fewer conflicts
+- ✅ **LALR(1)** (Look-Ahead LR): Balanced—power and table size
+- ✅ **LR(0)**: Simplest form, used as foundation
 
-Transitions between states using grammar symbols.
+### Grammar Analysis & Transformation
 
-### 4. Canonical Collection
+- ✅ FIRST and FOLLOW set computation
+- ✅ **Automatic left recursion elimination** (direct & indirect)
+- ✅ **Automatic left factoring** for LL(1) compatibility
+- ✅ Grammar validation for specific parser types
+- ✅ Production ordering and optimization
 
-Creates complete LR item sets.
+### Parser Construction (All Automatic)
 
-### 5. Parsing Table Construction
+- ✅ LR item set generation (closure & goto functions)
+- ✅ Canonical collection of parser states
+- ✅ DFA state diagram visualization (Graphviz)
+- ✅ ACTION & GOTO parsing table generation
+- ✅ Conflict detection and analysis
+- ✅ Step-by-step state transitions
 
-Builds:
+### Parsing & Visualization
 
-- ACTION table (Shift/Reduce/Accept)
-- GOTO table (State transitions)
+- ✅ Step-by-step shift-reduce simulation
+- ✅ Parse tree visualization
+- ✅ Stack and input trace during parsing
+- ✅ Visual DFA state diagrams with transitions
+- ✅ Detailed parsing tables (Pandas DataFrames)
 
-### 6. Shift–Reduce Parser
+### Advanced Features
 
-Simulates:
-
-- Stack operations
-- Input reading
-- Reductions
-- Acceptance or rejection
+- ✅ **Unified conflict detection**: Identify shift-reduce and reduce-reduce conflicts
+- ✅ **Parser comparison**: Test grammar on multiple parsers
+- ✅ **Smart recommendations**: Which parser to use for your grammar
+- ✅ **Structured reporting**: Export grammar analysis as structured data
+- ✅ **Interactive UI**: Browser-based exploration with Streamlit
 
 ---
 
-## 🏗️ Tech Stack
+## 🧠 Algorithms Implemented (From Scratch)
 
-| Component       | Technology   |
-| --------------- | ------------ |
-| Language        | Python 3     |
-| UI              | Streamlit    |
-| Visualization   | Graphviz     |
-| Tables          | Pandas       |
-| Version Control | Git & GitHub |
+### Grammar Foundation
+
+**FIRST & FOLLOW Sets** (`parser/first_follow.py`)
+
+- Computes terminal symbols that can appear first and after non-terminals
+- Handles epsilon productions automatically
+- Fixed-point iteration with cycle detection
+
+### Grammar Transformations
+
+**Left Recursion Elimination** (`parser/transformations.py`)
+
+- Direct recursion (A → A α | β)
+- Indirect recursion (complex dependencies)
+- Aho-Ullman algorithm
+- Preserves language while enabling predictive parsing
+
+**Left Factoring**
+
+- Removes common prefixes in productions
+- Enables LL(1) compatibility
+- Automatic transformation with rollback
+
+### Top-Down Parsing
+
+**LL(1) Prediction** (`parser/ll1_parser.py`)
+
+- Builds prediction matrix from FIRST+ sets
+- Single-pass table-driven parsing
+- Conflict detection (FIRST-FIRST, FIRST-FOLLOW)
+
+**Recursive Descent** (`parser/recursive_descent.py`)
+
+- Mutually recursive functions as parser methods
+- Optional backtracking mode for error recovery
+- Manual steering of parsing flow
+
+### Bottom-Up Parsing
+
+**LR Item Generation** (`parser/lr_items.py`)
+
+- LR(0) items with dot notation
+- LR(1) items with lookahead symbols
+- Closure computation: Add items for non-terminals after dots
+- GOTO computation: Item set transitions
+
+**DFA State Builder** (`parser/dfa_builder.py`)
+
+- Canonical collection of LR states
+- Breadth-first state space exploration
+- Transition table generation
+
+**Shift-Reduce Parsing** (`parser/shift_reduce.py`)
+
+- Stack-based parsing simulation
+- ACTION/GOTO table lookup
+- Conflict handling and error reporting
+
+**Parser Types** (`parser/lr_parser.py`)
+
+- **SLR(1)**: Uses FOLLOW sets for reduce actions
+- **CLR(1)**: Uses lookahead in items for reduce actions
+- **LALR(1)**: Merges CLR states for compact tables
+
+### Conflict Analysis
+
+**Conflict Detection** (`parser/conflict_detector.py`)
+
+- Shift-Reduce conflicts: When grammar is ambiguous
+- Reduce-Reduce conflicts: Multiple possible reductions
+- FIRST-FIRST conflicts: Multiple productions for same input
+- Grammar ambiguity assessment
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+| Component           | Technology                            |
+| ------------------- | ------------------------------------- |
+| **Language**        | Python 3.10+                          |
+| **UI Framework**    | Streamlit (interactive web interface) |
+| **Visualization**   | Graphviz (DFA, parse trees)           |
+| **Data Processing** | Pandas (parsing tables)               |
+| **Structure**       | Object-oriented, modular design       |
+| **Algorithms**      | All implemented from scratch          |
+| **Deployment**      | Web-based + CLI ready                 |
+
+### Architecture Overview
+
+```
+┌──────────────────────────────────────────────────┐
+│          Streamlit Interactive UI (app.py)       │
+└──────────────────┬───────────────────────────────┘
+                   │
+    ┌──────────────┼──────────────┐
+    ▼              ▼              ▼
+┌─────────┐  ┌──────────┐  ┌────────────┐
+│ Grammar │  │ Analysis │  │ Parsing    │
+│ Layer   │  │ Layer    │  │ Layer      │
+└────┬────┘  └────┬─────┘  └─────┬──────┘
+     │            │              │
+     ▼            ▼              ▼
+  grammar.py  first_follow.py  shift_reduce.py
+             transformations.py  lr_parser.py
+             ll1_parser.py       conflict_detector.py
+
+     ▼            ▼              ▼
+  ┌────────────────────────────────────┐
+  │    Visualization Layer             │
+  │  (dfa_graph.py, parse_tree.py)    │
+  └────────────────────────────────────┘
+```
 
 ---
 
@@ -135,190 +243,45 @@ compiler_pbl/
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Installation & Quick Start
 
-### Step 1 – Clone/Navigate to repository
+### Prerequisites
+
+- **Python 3.10+** (or 3.8+)
+- **Graphviz** system package (for visualization)
+- **pip** (Python package manager)
+
+### Setup (5 minutes)
+
+**1. Clone/Navigate to the project:**
 
 ```bash
 cd ~/Desktop/compiler_pbl
 ```
 
-### Step 2 – Create virtual environment
+**2. Create and activate virtual environment:**
 
 ```bash
+# Create venv
 python3 -m venv .venv
+
+# Activate (macOS/Linux)
 source .venv/bin/activate
+
+# Or on Windows:
+# .venv\Scripts\activate
 ```
 
-### Step 3 – Install dependencies
+**3. Install dependencies:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Step 4 – Run application
+**4. Install Graphviz system package** (required for visualizations):
 
 ```bash
-streamlit run app.py
-```
-
-Open browser at: **http://localhost:8501**
-
----
-
-## 🧪 Sample Grammar
-
-```
-E → E + T
-E → T
-T → T * F
-T → F
-F → ( E )
-F → id
-```
-
-### Sample Input
-
-```
-id + id * id
-```
-
-The system will show:
-
-- Stack state at each step
-- Input remaining to parse
-- Action taken (Shift/Reduce)
-- Final result (Accept/Reject)
-- Parse tree visualization
-
----
-
-## 📊 Output Screens
-
-The tool displays:
-
-- ✅ FIRST/FOLLOW sets
-- ✅ LR states with items
-- ✅ DFA diagram
-- ✅ Parsing table (ACTION & GOTO)
-- ✅ Parsing trace table
-- ✅ Parse tree
-
----
-
-## 🚀 Usage Guide
-
-### 1. **Input Grammar**
-
-Write grammar rules using the format:
-
-```
-NonTerminal -> production1 | production2 | production3
-```
-
-Examples:
-
-```
-E -> E + T | T
-T -> T * F | F
-F -> ( E ) | id
-```
-
-### 2. **Select Parser Type**
-
-- **SLR(1)**: Fastest, uses FOLLOW sets, less powerful
-- **CLR(1)**: Full LR power, more states, most powerful
-- **LALR(1)**: Balanced between SLR and CLR (recommended for most cases)
-
-### 3. **Build Parser**
-
-Click "Build Parser" to:
-
-- Parse the grammar
-- Compute FIRST/FOLLOW sets
-- Build LR DFA
-- Generate parsing tables
-
-### 4. **View Visualizations**
-
-Explore multiple tabs:
-
-- **FIRST/FOLLOW**: Terminal sets
-- **LR States**: Detailed item sets
-- **Parsing Table**: ACTION and GOTO entries
-- **DFA Graph**: State machine diagram
-
-### 5. **Test Input**
-
-- Enter space-separated tokens
-- Click "Parse Input"
-- View step-by-step trace
-- See final parse tree
-
----
-
-## 🎓 Learning Outcomes
-
-After exploring this project, you will understand:
-
-- How FIRST and FOLLOW sets work
-- LR item construction and closure
-- State machine (DFA) construction for parsing
-- ACTION and GOTO table generation
-- Differences between SLR, CLR, and LALR
-- Shift-Reduce parsing mechanics
-- Parse tree construction
-- How real parser generators like YACC/Bison work
-
----
-
-## 🚀 Future Improvements
-
-- Grammar file upload support
-- Export parsing table to CSV/JSON
-- Syntax tree animation
-- Error recovery strategies
-- Code generation phase
-- Grammar transformation tools
-- Web deployment
-
----
-
-## 📚 Applications
-
-- Compiler design learning
-- Educational visualization tool
-- Parser debugging and testing
-- Academic projects
-- Understanding YACC/Bison internals
-- CS course teaching assistant
-
----
-
-## 🐛 Troubleshooting
-
-### "ModuleNotFoundError: No module named 'X'"
-
-Make sure you're using the virtual environment:
-
-```bash
-source .venv/bin/activate
-```
-
-### "Port 8501 already in use"
-
-Kill the existing Streamlit process or use a different port:
-
-```bash
-streamlit run app.py --server.port 8502
-```
-
-### "graphviz not installed"
-
-Install Graphviz system package:
-
-```bash
-# macOS
+# macOS (with Homebrew)
 brew install graphviz
 
 # Ubuntu/Debian
@@ -326,68 +289,388 @@ sudo apt-get install graphviz
 
 # Windows (with Chocolatey)
 choco install graphviz
+
+# Or download from: https://graphviz.org/download/
+```
+
+**5. Launch the application:**
+
+```bash
+streamlit run app.py
+```
+
+✅ Open your browser to **http://localhost:8501**
+
+---
+
+## 🚀 Quick Usage Guide
+
+### Basic Workflow
+
+**Step 1: Input Your Grammar**
+
+Write a context-free grammar using the format:
+
+```
+NonTerminal -> production1 | production2
+```
+
+Example (Expression Grammar):
+
+```
+E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id
+```
+
+**Step 2: Choose Parser Type**
+
+Select which parsing strategy to use:
+
+- **LL(1)**: Top-down, fast, limited power
+- **Recursive Descent**: Manual parsing, good for learning
+- **SLR(1)**: Shift-reduce, simple, adequate for many grammars
+- **CLR(1)**: Most powerful LR parser, handles most grammars
+- **LALR(1)**: Balanced (recommended), used in most real compilers
+
+**Step 3: Analyze & Visualize**
+
+The framework automatically:
+
+- Transforms grammar if needed (eliminates left recursion, etc.)
+- Computes FIRST/FOLLOW sets
+- Builds parser states and DFA
+- Generates parsing table
+- Detects conflicts and provides recommendations
+
+**Step 4: Test & Debug**
+
+Enter tokens to parse:
+
+```
+id + id * id
+```
+
+See:
+
+- ✅ Step-by-step trace
+- ✅ Stack evolution
+- ✅ Parse tree
+- ✅ Action decisions (shift/reduce)
+
+### Programmatic Usage (Python API)
+
+```python
+from parser.grammar import Grammar
+from parser.parser_comparator import ParserComparator
+
+# 1. Parse grammar
+grammar = Grammar.from_text("""
+E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id
+""")
+
+# 2. Compare all parsers
+comparator = ParserComparator(grammar)
+results = comparator.compare_all()
+
+# 3. Check results
+for parser_name, result in results.items():
+    print(f"{parser_name}: {'✅' if result.success else '❌'}")
+    if result.conflicts:
+        print(f"  Conflicts: {result.conflicts}")
+
+# 4. Use best parser
+best_parser = comparator.get_recommended_parser()
+if best_parser.parse("id + id * id").accepted:
+    print("✅ Input accepted!")
 ```
 
 ---
 
-## 📝 Module Documentation
+## 📚 Example Grammars
 
-### `parser/grammar.py`
+### Simple Expression Grammar
 
-- Parses CFG from text format
-- Stores productions in structured format
-- Identifies terminals and non-terminals
-- Augments grammar with S' -> S
+```
+E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id
+```
 
-### `parser/first_follow.py`
+**Type:** Ambiguous, needs precedence handling  
+**Best Parser:** CLR(1) or LALR(1) with conflict resolution
 
-- Computes FIRST sets using fixed-point iteration
-- Computes FOLLOW sets with proper epsilon handling
-- Provides helper methods for set queries
+### Simple Assignment Grammar (LL(1) Compatible)
 
-### `parser/lr_items.py`
+```
+S -> V = E ;
+V -> id
+E -> E + V | V
+```
 
-- Defines LR0Item and LR1Item classes
-- Implements closure() for both LR(0) and LR(1)
-- Implements goto() function
+**Type:** Unambiguous  
+**Best Parser:** LL(1) after transformation
 
-### `parser/dfa_builder.py`
+### Boolean Expression
 
-- Builds canonical collection of LR states
-- Maintains state transitions
-- Supports both LR(0) and LR(1) construction
+```
+E -> E | E | E & E | ! E | ( E ) | true | false
+```
 
-### `parser/parsing_table.py`
-
-- Generates ACTION and GOTO tables
-- Implements SLR(1), CLR(1), LALR(1) builders
-- Detects and reports shift/reduce conflicts
-
-### `parser/shift_reduce.py`
-
-- Simulates stack-based LR parsing
-- Records all parsing steps
-- Builds parse tree during parsing
-
-### `visualizer/dfa_graph.py`
-
-- Renders DFA using Graphviz
-- Shows state transitions clearly
-
-### `visualizer/parse_tree.py`
-
-- Defines parse tree Node class
-- Renders parse tree using Graphviz
-
-### `app.py`
-
-- Streamlit UI with interactive interface
-- Displays all visualizations
-- Allows real-time testing and debugging
+**Type:** Highly ambiguous  
+**Best Parser:** CLR(1) with careful conflict handling
 
 ---
 
-## 📄 License
+## 📊 What You'll See
+
+The interactive UI displays comprehensive information:
+
+### Analysis Phase
+
+- **Grammar Summary**: Productions, terminals, non-terminals
+- **FIRST/FOLLOW Sets**: Terminal symbols analysis
+- **Grammar Transformations**: Left recursion elimination report
+- **Conflict Detection**: Any ambiguities identified
+
+### Construction Phase
+
+- **LR States**: Item sets for each parser state
+- **State Transitions**: Which symbols cause which transitions
+- **DFA Diagram**: Visual state machine (Graphviz)
+- **Parsing Tables**: ACTION and GOTO entries (Pandas DataFrames)
+
+### Parsing Phase
+
+- **Parsing Trace**: Step-by-step stack operations
+- **Parse Tree**: Visual representation of derivation
+- **Decision Log**: Each shift/reduce decision explained
+- **Result**: Accept or reject with explanation
+
+---
+
+## 🎓 Educational Value
+
+### For Students Learning Compiler Design
+
+- Visualize algorithms taught in theory
+- Understand real compiler internals
+- Practice building parsers
+- See why certain transformations are needed
+- Learn trade-offs between parser types
+
+### For Teaching/Research
+
+- Interactive demonstration tool
+- Helps explain complex concepts
+- Student assignment framework
+- Research into grammar transformations
+- Algorithm comparison platform
+
+### Key Insights Gained
+
+1. **Predictive vs. Shift-Reduce**: See fundamental differences
+2. **Conflicts**: Understand when/why they occur
+3. **Grammar Design**: Why certain features require specific parsers
+4. **Transformations**: Why left recursion elimination is necessary
+5. **Table Generation**: How compilers automate parser construction
+
+---
+
+## � Project Structure & Module Guide
+
+```
+compiler_pbl/
+├── app.py                              # Main Streamlit web interface
+├── requirements.txt                    # Python dependencies
+├── parser/                             # Core parsing module
+│   ├── grammar.py                      # Grammar representation & parsing
+│   ├── first_follow.py                 # FIRST/FOLLOW set computation
+│   ├── transformations.py              # Left recursion, left factoring
+│   ├── lr_items.py                     # LR(0) and LR(1) item classes
+│   ├── dfa_builder.py                  # DFA state construction
+│   ├── ll1_parser.py                   # LL(1) predictive parser
+│   ├── recursive_descent.py            # Recursive descent parser
+│   ├── lr_parser.py                    # LR parsers (SLR, CLR, LALR)
+│   ├── parsing_table.py                # ACTION/GOTO table generation
+│   ├── shift_reduce.py                 # LR parsing simulation
+│   ├── conflict_detector.py            # Conflict detection & analysis
+│   ├── parser_comparator.py            # Compare multiple parsers
+│   ├── report_generator.py             # Structured report generation
+│   ├── top_down_validator.py           # LL(1) grammar validation
+│   └── __init__.py                     # Module initialization
+├── visualizer/                         # Visualization module
+│   ├── dfa_graph.py                    # DFA visualization (Graphviz)
+│   ├── parse_tree.py                   # Parse tree visualization
+│   └── __init__.py                     # Module initialization
+├── examples/                           # Sample grammars
+│   └── sample_grammar.txt              # Example input file
+└── screenshots/                        # Documentation screenshots
+```
+
+### Module Dependencies
+
+```
+grammar.py (base)
+    ├── first_follow.py
+    ├── transformations.py
+    └── lr_items.py
+        └── dfa_builder.py
+            ├── parsing_table.py
+            └── shift_reduce.py
+
+ll1_parser.py
+    └─ transformations.py
+
+recursive_descent.py
+    └─ transformations.py
+
+lr_parser.py (abstract base)
+    ├── SLRParser
+    ├── CLRParser
+    └── LALRParser
+
+conflict_detector.py
+    ├── ll1_parser.py
+    └── lr_parser.py
+
+parser_comparator.py
+    ├── ll1_parser.py
+    ├── recursive_descent.py
+    ├── lr_parser.py
+    └── conflict_detector.py
+
+visualizer/
+    ├── dfa_graph.py (uses dfa_builder.py)
+    └── parse_tree.py (uses shift_reduce.py)
+```
+
+---
+
+## � Use Cases & Applications
+
+### Academic
+- **Compiler Design Course**: Interactive demonstrations
+- **Formal Languages & Automata**: Parsing visualization
+- **Algorithm Courses**: Study of parsing algorithms
+- **Student Projects**: Framework for parser construction
+
+### Professional
+- **Parser Debugging**: Test grammar behavior
+- **Conflict Analysis**: Understand grammar ambiguities
+- **Algorithm Research**: Compare parser implementations
+- **Educational Content**: Create tutorials/documentation
+
+### Real-World Scenarios
+- Designing domain-specific languages (DSLs)
+- Building configuration file parsers
+- Creating query language parsers
+- Understanding existing compiler internals
+
+---
+
+## 🐛 Troubleshooting
+
+### Environment Issues
+
+**"ModuleNotFoundError: No module named..."**
+```bash
+# Ensure virtual environment is activated
+source .venv/bin/activate
+# Reinstall requirements
+pip install -r requirements.txt
+```
+
+**"Port 8501 already in use"**
+```bash
+# Use different port
+streamlit run app.py --server.port 8502
+```
+
+**"graphviz module not found"**
+```bash
+# Install Graphviz and Python bindings
+pip install graphviz
+# Then install system package as well (see Installation section)
+```
+
+### Parsing Issues
+
+**"Grammar doesn't accept valid input"**
+- Check for left recursion (use transformations)
+- Verify grammar is unambiguous or conflicts are acceptable
+- Try automatic grammar transformation for LL(1)
+
+**"Too many conflicts detected"**
+- Grammar may be inherently ambiguous
+- Try CLR(1) instead of SLR(1)
+- Consider LALR(1) for practical use
+
+**"Transformation failed"**
+- Grammar may not be transformable for desired parser type
+- Try different parser type
+- Consider rewriting grammar manually
+
+---
+
+## 🚀 Advanced Features
+
+### Comparing Parser Types
+
+Use [parser_comparator.py](parser/parser_comparator.py) to analyze your grammar:
+
+```python
+from parser.parser_comparator import ParserComparator
+from parser.grammar import Grammar
+
+grammar = Grammar.from_text("E -> E + T | T | 'id'")
+comparator = ParserComparator(grammar)
+
+# Compare all parsers
+results = comparator.compare_all()
+
+# Get recommendation
+best = comparator.get_recommended_parser()
+print(f"Best parser: {best.name}")
+```
+
+### Grammar Transformation
+
+Automatically transform grammars for LL(1) parsing:
+
+```python
+from parser.transformations import GrammarTransformer
+
+transformer = GrammarTransformer(grammar)
+result = transformer.transform_for_ll1()
+
+print(f"Original: {result.original_grammar}")
+print(f"Transformed: {result.transformed_grammar}")
+print(f"Transformations applied: {result.transformations}")
+```
+
+### Detailed Analysis
+
+Generate comprehensive reports:
+
+```python
+from parser.report_generator import ReportGenerator
+
+generator = ReportGenerator(grammar)
+report = generator.generate_analysis_report()
+
+# Access structured data
+print(report.grammar_summary)
+print(report.first_sets)
+print(report.follow_sets)
+print(report.conflicts)
+```
+
+---
+
+## �📄 License
 
 This project is for educational purposes only.
 
