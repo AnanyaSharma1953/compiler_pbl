@@ -552,18 +552,21 @@ visualizer/
 ## � Use Cases & Applications
 
 ### Academic
+
 - **Compiler Design Course**: Interactive demonstrations
 - **Formal Languages & Automata**: Parsing visualization
 - **Algorithm Courses**: Study of parsing algorithms
 - **Student Projects**: Framework for parser construction
 
 ### Professional
+
 - **Parser Debugging**: Test grammar behavior
 - **Conflict Analysis**: Understand grammar ambiguities
 - **Algorithm Research**: Compare parser implementations
 - **Educational Content**: Create tutorials/documentation
 
 ### Real-World Scenarios
+
 - Designing domain-specific languages (DSLs)
 - Building configuration file parsers
 - Creating query language parsers
@@ -576,6 +579,7 @@ visualizer/
 ### Environment Issues
 
 **"ModuleNotFoundError: No module named..."**
+
 ```bash
 # Ensure virtual environment is activated
 source .venv/bin/activate
@@ -584,12 +588,14 @@ pip install -r requirements.txt
 ```
 
 **"Port 8501 already in use"**
+
 ```bash
 # Use different port
 streamlit run app.py --server.port 8502
 ```
 
 **"graphviz module not found"**
+
 ```bash
 # Install Graphviz and Python bindings
 pip install graphviz
@@ -599,16 +605,19 @@ pip install graphviz
 ### Parsing Issues
 
 **"Grammar doesn't accept valid input"**
+
 - Check for left recursion (use transformations)
 - Verify grammar is unambiguous or conflicts are acceptable
 - Try automatic grammar transformation for LL(1)
 
 **"Too many conflicts detected"**
+
 - Grammar may be inherently ambiguous
 - Try CLR(1) instead of SLR(1)
 - Consider LALR(1) for practical use
 
 **"Transformation failed"**
+
 - Grammar may not be transformable for desired parser type
 - Try different parser type
 - Consider rewriting grammar manually

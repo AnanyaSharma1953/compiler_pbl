@@ -8,6 +8,7 @@ from parser.parsing_table import build_slr_table, build_clr_table, build_lalr_ta
 from parser.shift_reduce import parse_input
 from parser.ll1_parser import LL1Parser
 from parser.recursive_descent import RecursiveDescentParser
+from parser.transformations import GrammarTransformer
 from parser.top_down_validator import TopDownGrammarValidator
 from visualizer.dfa_graph import build_dfa_graph
 
@@ -482,6 +483,10 @@ def adapt_ll1_steps(steps):
         stack_repr = " ".join(step.stack) if isinstance(step.stack, list) else str(step.stack)
         adapted.append(LL1Step(stack_repr, step.input_remaining, step.action))
     return adapted
+
+
+def format_grammar_for_display(grammar):
+    return "\n".join(str(prod) for prod in grammar.productions)
 
 
 def show_top_down_validation_report(report, selected_top_down_type):
@@ -1037,9 +1042,8 @@ if build_btn and grammar_text.strip():
         validator = TopDownGrammarValidator(grammar)
         validation_report = validator.validate()
 
-        show_top_down_validation_report(validation_report, top_down_type)
-
         if top_down_type == "LL(1)" and not validation_report.is_valid_for_ll1():
+            show_top_down_validation_report(validation_report, top_down_type)
             progress_bar.empty()
             status_text.empty()
 
@@ -1058,37 +1062,55 @@ if build_btn and grammar_text.strip():
             st.stop()
 
         if top_down_type == "LL(1)":
+            show_top_down_validation_report(validation_report, top_down_type)
             effective_parser = "LL(1)"
             parser_mode = "predictive"
             ll1_parser = LL1Parser(grammar)
             st.success("🏷️ Status: LL(1) Compatible")
 
         else:
-            if validation_report.has_left_recursion:
-                progress_bar.empty()
-                status_text.empty()
-                st.error("### ❌ Left recursion detected")
-                st.warning("**Top-down parsing cannot proceed due to left recursion.**")
-                st.stop()
+            rd_grammar = grammar
+            rd_validation_report = validation_report
 
-            effective_parser = "Recursive Descent"
-            if validation_report.is_ll1:
+            st.markdown("#### 🧾 Recursive Descent Check")
+
+            if validation_report.has_left_recursion:
+                transformer = GrammarTransformer(grammar)
+                rd_grammar = transformer.eliminate_indirect_left_recursion()
+                rd_validation_report = TopDownGrammarValidator(rd_grammar).validate()
+
+                st.warning("Original Grammar: Not Recursive Descent (due to left recursion, but transformable)")
+                st.markdown("**Transformed Grammar:**")
+                st.code(format_grammar_for_display(rd_grammar), language="text")
+            else:
+                st.success("Original Grammar: Recursive Descent")
+                st.markdown("**Grammar:**")
+                st.code(format_grammar_for_display(rd_grammar), language="text")
+
+            if rd_validation_report.is_valid_for_recursive_descent():
+                st.success("Final Result: Recursive Descent = Yes")
+            else:
+                st.warning("Final Result: Recursive Descent = No")
+
+            if rd_validation_report.is_ll1:
+                st.info("Grammar is LL(1) and suitable for predictive parsing")
+            else:
+                st.warning("Grammar is NOT LL(1), but Recursive Descent is possible using backtracking")
+
+            if rd_validation_report.is_ll1:
                 parser_mode = "predictive"
-                st.success("🏷️ Status: LL(1) Compatible")
-                st.info("ℹ️ Using Predictive Recursive Descent")
+                st.info("Parsing Mode Decision: Using Predictive Parsing (LL(1))")
             else:
                 parser_mode = "backtracking"
-                parser_used = "Recursive Descent (Backtracking)"
-                st.warning("Grammar is not LL(1). Using Recursive Descent with Backtracking.")
-                st.warning("Parser built with backtracking (may be less efficient)")
-                st.info("🏷️ Status: Not LL(1) | Using Backtracking")
+                st.info("Parsing Mode Decision: Using Recursive Descent with Backtracking")
+
+            effective_parser = "Recursive Descent"
 
         progress_bar.progress(80)
 
         if effective_parser == "Recursive Descent":
-            rd_parser = RecursiveDescentParser(grammar, mode=parser_mode)
-            parser_used = f"Recursive Descent ({parser_mode.title()})"
-            st.info("ℹ️ Recursive Descent mode: Backtracking")
+            rd_parser = RecursiveDescentParser(rd_grammar, mode=parser_mode)
+            parser_used = f"Recursive Descent ({'Predictive' if parser_mode == 'predictive' else 'Backtracking'})"
         
         status_text.text("Parsing input string...")
         progress_bar.progress(90)
@@ -1097,13 +1119,9 @@ if build_btn and grammar_text.strip():
             if effective_parser == "LL(1)":
                 ll1_steps, accepted = ll1_parser.parse(input_string)
                 st.session_state.steps = adapt_ll1_steps(ll1_steps)
-                if not accepted and ll1_parser.last_error:
-                    st.error(f"❌ {ll1_parser.last_error.message}")
             else:
                 rd_steps, accepted, _ = rd_parser.parse(input_string)
                 st.session_state.steps = rd_steps
-                if not accepted and rd_parser.last_error:
-                    st.error(f"❌ {rd_parser.last_error.message}")
             st.session_state.accepted = accepted
         
         st.session_state.table = None
